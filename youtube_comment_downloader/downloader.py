@@ -15,9 +15,9 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 SORT_BY_POPULAR = 0
 SORT_BY_RECENT = 1
 
-YT_CFG_RE = r'ytcfg\.set\s*\(\s*({.+?})\s*\)\s*;'
-YT_INITIAL_DATA_RE = r'(?:window\s*\[\s*["\']ytInitialData["\']\s*\]|ytInitialData)\s*=\s*({.+?})\s*;\s*(?:var\s+meta|</script|\n)'
-YT_HIDDEN_INPUT_RE = r'<input\s+type="hidden"\s+name="([A-Za-z0-9_]+)"\s+value="([A-Za-z0-9_\-\.]*)"\s*(?:required|)\s*>'
+YT_CFG_RE = re.compile(r'ytcfg\.set\s*\(\s*({.+?})\s*\)\s*;')
+YT_INITIAL_DATA_RE = re.compile(r'(?:window\s*\[\s*["\']ytInitialData["\']\s*\]|ytInitialData)\s*=\s*({.+?})\s*;\s*(?:var\s+meta|</script|\n)')
+YT_HIDDEN_INPUT_RE = re.compile(r'<input\s+type="hidden"\s+name="([A-Za-z0-9_]+)"\s+value="([A-Za-z0-9_\-\.]*)"\s*(?:required|)\s*>')
 
 
 class YoutubeCommentDownloader:
@@ -52,7 +52,7 @@ class YoutubeCommentDownloader:
 
         if 'consent' in str(response.url):
             # We may get redirected to a separate page for cookie consent. If this happens we agree automatically.
-            params = dict(re.findall(YT_HIDDEN_INPUT_RE, response.text))
+            params = dict(YT_HIDDEN_INPUT_RE.findall(response.text))
             params.update({'continue': youtube_url, 'set_eom': False, 'set_ytc': True, 'set_apyt': True})
             response = self.session.post(YOUTUBE_CONSENT_URL, params=params)
 
@@ -148,8 +148,8 @@ class YoutubeCommentDownloader:
             time.sleep(sleep)
 
     @staticmethod
-    def regex_search(text, pattern, group=1, default=None):
-        match = re.search(pattern, text)
+    def regex_search(text, regexp, group=1, default=None):
+        match = regexp.search(text)
         return match.group(group) if match else default
 
     @staticmethod
